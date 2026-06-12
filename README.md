@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/img/enruta_banner.png" alt="En Ruta Banner" width="800">
+  <img src="docs/Enruta_banner_info.png" alt="En Ruta Banner" width="800">
 </p>
 
 # EN RUTA — Collaborative Rural Logistics Platform
