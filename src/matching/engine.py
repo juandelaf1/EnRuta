@@ -15,16 +15,22 @@ def match_all(max_detour_pct=20, max_detour_km=50, top_k=2000):
     conn = get_connection()
 
     ofertas = read_sql("""
-        SELECT o.*, t.nombre as transportista, t.capacidad_kg
+        SELECT o.*,
+               COALESCE(t.nombre, u.nombre) as transportista,
+               COALESCE(t.capacidad_kg, 1000) as capacidad_kg
         FROM ofertas o
-        JOIN transportistas t ON o.transportista_id = t.id
+        LEFT JOIN transportistas t ON o.transportista_id = t.id
+        LEFT JOIN usuarios u ON o.transportista_id = u.id
         WHERE o.activa = 1
     """)
 
     demandas = read_sql("""
-        SELECT d.*, p.nombre as productor, p.tipo as producto_tipo
+        SELECT d.*,
+               COALESCE(p.nombre, u.nombre) as productor,
+               COALESCE(p.tipo, 'general') as producto_tipo
         FROM demandas d
-        JOIN productores p ON d.productor_id = p.id
+        LEFT JOIN productores p ON d.productor_id = p.id
+        LEFT JOIN usuarios u ON d.productor_id = u.id
         WHERE d.activa = 1
     """)
 
@@ -160,21 +166,11 @@ def match_all(max_detour_pct=20, max_detour_km=50, top_k=2000):
     df = df.sort_values("score", ascending=False)
 
     conn = get_connection()
-    conn.executescript("PRAGMA foreign_keys=OFF; DROP TABLE IF EXISTS matches;")
-    conn.execute("""
-        CREATE TABLE matches (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            oferta_id INTEGER,
-            demanda_id INTEGER,
-            ahorro_estimado REAL,
-            co2_evitado_kg REAL,
-            fecha_match TEXT DEFAULT (datetime('now'))
-        )
-    """)
+    conn.execute("DELETE FROM matches WHERE estado = 'pendiente'")
     for _, row in df.iterrows():
         conn.execute(
-            "INSERT INTO matches (oferta_id, demanda_id, ahorro_estimado, co2_evitado_kg) VALUES (?, ?, ?, ?)",
-            (int(row["oferta_id"]), int(row["demanda_id"]), row["extra_km"], row["ahorro_co2_kg"])
+            "INSERT INTO matches (oferta_id, demanda_id, ahorro_estimado, co2_evitado_kg, score) VALUES (?, ?, ?, ?, ?)",
+            (int(row["oferta_id"]), int(row["demanda_id"]), row["extra_km"], row["ahorro_co2_kg"], row["score"])
         )
     conn.commit()
 
