@@ -68,6 +68,8 @@ def health():
             "matches_run_persisted": True,
             "weather_route_via_skycast": True,
             "openapi": "/openapi.json",
+            "ready": "/ready",
+            "m2m_scopes": ["logistics:evaluate"],
         },
     }
 
