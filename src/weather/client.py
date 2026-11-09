@@ -35,6 +35,12 @@ class PointWeather:
     alerta_desc: str = ""
     fuente: str = "unknown"
     timestamp: Optional[str] = None
+    procedencia: Optional[str] = None  # tolera campos de contrato (SkyCast)
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "PointWeather":
+        allowed = {f.name for f in cls.__dataclass_fields__.values()}  # type: ignore[attr-defined]
+        return cls(**{k: v for k, v in d.items() if k in allowed})
 
 
 @dataclass
@@ -66,7 +72,7 @@ class WeatherProvider(ABC):
 
     def get_route_weather(self, lat1: float, lon1: float,
                           lat2: float, lon2: float,
-                          num_samples: int = 5) -> RouteWeather:
+                          num_samples: int = 5, correlation_id: str = None) -> RouteWeather:
         """Weather along a straight-line path from (lat1, lon1) to (lat2, lon2).
         Default implementation interpolates waypoints and calls get_point_weather.
         Providers may override with a more efficient batch endpoint.
@@ -227,24 +233,27 @@ class SkyCastProvider(WeatherProvider):
 
     def get_route_weather(self, lat1: float, lon1: float,
                           lat2: float, lon2: float,
-                          num_samples: int = 5) -> RouteWeather:
+                          num_samples: int = 5, correlation_id: str = None) -> RouteWeather:
         """
         Intentar llamar al endpoint de ruta de SkyCast.
         Si falla, degradar a OWM + interpolación.
         """
         try:
             url = f"{self._base}/route-weather"
+            headers = {
+                "Authorization": f"Bearer {self._api_key}",
+                "Content-Type": "application/json",
+            }
+            if correlation_id:
+                headers["X-Correlation-Id"] = correlation_id
             r = requests.post(url, json={
                 "origen_lat": lat1, "origen_lon": lon1,
                 "destino_lat": lat2, "destino_lon": lon2,
                 "num_samples": num_samples,
-            }, headers={
-                "Authorization": f"Bearer {self._api_key}",
-                "Content-Type": "application/json",
-            }, timeout=10)
+            }, headers=headers, timeout=10)
             if r.status_code == 200:
                 data = r.json()
-                waypoints = [PointWeather(**w) for w in data.get("waypoints", [])]
+                waypoints = [PointWeather.from_dict(w) for w in data.get("waypoints", [])]
                 if waypoints:
                     return self._aggregate(waypoints)
         except Exception:
@@ -273,8 +282,8 @@ class WeatherClient:
     def get_point_weather(self, lat, lon) -> PointWeather:
         return self._provider.get_point_weather(lat, lon)
 
-    def get_route_weather(self, lat1, lon1, lat2, lon2, num_samples=5) -> RouteWeather:
-        return self._provider.get_route_weather(lat1, lon1, lat2, lon2, num_samples)
+    def get_route_weather(self, lat1, lon1, lat2, lon2, num_samples=5, correlation_id=None) -> RouteWeather:
+        return self._provider.get_route_weather(lat1, lon1, lat2, lon2, num_samples, correlation_id=correlation_id)
 
     @classmethod
     def get_provider(cls, name: str = "owm", **kwargs) -> WeatherProvider:
