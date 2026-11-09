@@ -11,7 +11,7 @@
 - **Actores sintéticos (simulación reproducible, seed 42):** productores, transportistas, ofertas y demandas generados en `pipeline.step3`. **No son registros reales** de MAPA/MITMA/empresas.
 - **Matching:** `src/matching/engine.py` — prefiltrado Haversine + refinamiento OSRM (driving) → desvío extra/km/% y score (urgencia + aprovechamiento). Estimaciones de coste/CO₂ heurísticas (`src/pricing.py`).
 - **Clima (Seam 1, verificado en vivo):** `src/weather/client.py` consume SkyCast `POST /api/v1/route-weather` (AEMET en España + fallback Open-Meteo) y aplica `adjust_route_by_weather`. Ver `docs/SKYCAST_INTEGRATION.md`.
-- **Interfaces:** API FastAPI (`src/api`, auth JWT/bcrypt) y dashboard **Dash** (`src/dashboard.py`). Persistencia **SQLite** (`data/enruta.db`).
+- **Interfaces/ops:** API FastAPI (`src/api`, auth JWT/bcrypt; contratos m2m opcionales con API key+scopes, rate limit in-memory u opcional Redis `REDIS_URL`, auditoría JSONL opcional `ENRUTA_AUDIT_FILE`, `/health`+`/ready`, OpenAPI snapshot) y dashboard **Dash** (`src/dashboard.py`). Persistencia **SQLite** dev (`data/enruta.db`); prod escalable con Postgres/secret manager según infraestructura. Plantilla: `docker-compose.prod.yml`.
 - **Limitaciones:** actores/ofertas simulados (no operativo sin datos reales/partners); OSRM público sin SLA (fallback Haversine); coste/CO₂ = estimaciones. Métricas de negocio solo con datos observados.
 
 ## Visión / backlog (objetivo, no implementado)
