@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import List
 import pandas as pd
+from uuid import uuid4
 from src.api.models import MatchResponse, MatchEvaluateRequest, MatchEvaluateResponse, MatchEvalResult
 from src.api.deps import get_current_user_dep, get_logistics_evaluate_principal
 from src.api.auth import UserInDB
@@ -78,23 +79,56 @@ def accept_match(match_id: int, user: UserInDB = Depends(get_current_user_dep)):
     return {"status": "aceptado", "match_id": match_id}
 
 
+def _normalize_eval_body(body: dict, request: Request):
+    """Dual-read: legacy root fields OR ecosystem envelope {capability_id, payload,...}."""
+    if isinstance(body, dict) and body.get("capability_id") == "logistics.evaluate_matches" and isinstance(body.get("payload"), dict):
+        payload = body["payload"]
+        opts = payload.get("options") or {}
+        legacy = {
+            "ofertas": payload.get("ofertas", []),
+            "demandas": payload.get("demandas", []),
+            "max_detour_pct": opts.get("max_detour_pct", 20),
+            "max_detour_km": opts.get("max_detour_km", 50),
+            "top_k": opts.get("top_k", 500),
+        }
+        correlation_id = body.get("correlation_id") or request.headers.get("X-Correlation-Id") or request.headers.get("X-Request-Id") or str(uuid4())
+        contract_version = body.get("contract_version") or "logistics-l1/0.1"
+        return legacy, correlation_id, contract_version, True
+    correlation_id = request.headers.get("X-Correlation-Id") or request.headers.get("X-Request-Id") or (body.get("correlation_id") if isinstance(body, dict) else None) or str(uuid4())
+    contract_version = (body.get("contract_version") if isinstance(body, dict) else None) or "logistics-l1/0.1"
+    return body if isinstance(body, dict) else {}, correlation_id, contract_version, False
+
+
 @router.post("/evaluate", response_model=MatchEvaluateResponse)
-def evaluate_matches(
-    req: MatchEvaluateRequest,
+async def evaluate_matches(
     request: Request,
     principal: dict = Depends(get_logistics_evaluate_principal),
     _rl: None = Depends(rate_limit("ENRUTA_M2M_RATE_LIMIT", "120/minute")),
 ):
     """Evaluación stateless (sin persistir): acoplamiento Poolar L1 / uso autónomo.
 
-    Recibe ofertas+demandas y devuelve matches explicados (desvío, km, score, CO2 estimado,
-    procedencia). No modifica la base de datos. Auth: usuario (JWT) o m2m scope logistics:evaluate (D5).
+    Recibe ofertas+demandas (legacy root o envelope ecosystem) y devuelve matches explicados
+    (desvío, km, score, CO2 estimado, procedencia). No modifica la base de datos.
+    Auth: usuario (JWT) o m2m scope logistics:evaluate (D5).
     """
+    raw = await request.json()
+    legacy, correlation_id, contract_version, from_envelope = _normalize_eval_body(raw, request)
+    try:
+        req = MatchEvaluateRequest.model_validate(legacy) if hasattr(MatchEvaluateRequest, "model_validate") else MatchEvaluateRequest.parse_obj(legacy)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
     ofertas = pd.DataFrame([o.model_dump() for o in req.ofertas])
     demandas = pd.DataFrame([d.model_dump() for d in req.demandas])
     if ofertas.empty or demandas.empty:
-        audit_integration(request, "logistics-l1/0.1", "ok", {"count": 0})
-        return MatchEvaluateResponse(matches=[], count=0)
+        audit_integration(request, contract_version, "ok", {"count": 0, "correlation_id": correlation_id})
+        return MatchEvaluateResponse(
+            contract_version=contract_version, matches=[], count=0,
+            capability_id="logistics.evaluate_matches", correlation_id=correlation_id,
+            status="ok", data_status="estimated",
+            provenance={"provider": "enruta", "engine": "haversine*1.3/simulacion-sobre-base-real"},
+            result={"matches": [], "count": 0, "procedencia": "estimado; actores/datos pueden ser simulados segun origen"},
+        )
     df = compute_matches(
         ofertas, demandas,
         max_detour_pct=req.max_detour_pct,
@@ -103,8 +137,14 @@ def evaluate_matches(
         verbose=False,
     )
     if df is None or df.empty:
-        audit_integration(request, "logistics-l1/0.1", "ok", {"count": 0})
-        return MatchEvaluateResponse(matches=[], count=0)
+        audit_integration(request, contract_version, "ok", {"count": 0, "correlation_id": correlation_id})
+        return MatchEvaluateResponse(
+            contract_version=contract_version, matches=[], count=0,
+            capability_id="logistics.evaluate_matches", correlation_id=correlation_id,
+            status="ok", data_status="estimated",
+            provenance={"provider": "enruta", "engine": "haversine*1.3/simulacion-sobre-base-real"},
+            result={"matches": [], "count": 0, "procedencia": "estimado; actores/datos pueden ser simulados segun origen"},
+        )
     results = []
     for _, r in df.iterrows():
         results.append(MatchEvalResult(
@@ -120,5 +160,15 @@ def evaluate_matches(
             ruta=str(r.get("ruta", "")),
             producto=str(r.get("producto", "")),
         ))
-    audit_integration(request, "logistics-l1/0.1", "ok", {"count": len(results)})
-    return MatchEvaluateResponse(matches=results, count=len(results))
+    audit_integration(request, contract_version, "ok", {"count": len(results), "correlation_id": correlation_id})
+    resp = MatchEvaluateResponse(
+        contract_version=contract_version, matches=results, count=len(results),
+        capability_id="logistics.evaluate_matches", correlation_id=correlation_id,
+        status="ok", data_status="estimated",
+        provenance={"provider": "enruta", "engine": "haversine*1.3/simulacion-sobre-base-real"},
+        result={"matches": [m.model_dump() for m in results], "count": len(results), "procedencia": "estimado; actores/datos pueden ser simulados segun origen"},
+    )
+    if from_envelope:
+        # ensure correlation echoed in response context; headers already set by middleware if any
+        pass
+    return resp

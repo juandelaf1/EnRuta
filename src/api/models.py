@@ -169,6 +169,18 @@ class MatchEvaluateResponse(BaseModel):
     matches: List[MatchEvalResult]
     count: int
     procedencia: str = "estimado; actores/datos pueden ser simulados segun origen"
+    # Additive ecosystem envelope fields (backward-compatible)
+    capability_id: Optional[str] = "logistics.evaluate_matches"
+    correlation_id: Optional[str] = None
+    status: Optional[str] = "ok"
+    data_status: Optional[str] = "estimated"
+    provenance: Optional[dict] = None
+    result: Optional[dict] = None
+    warnings: Optional[List[dict]] = None
+    errors: Optional[List[dict]] = None
+
+    class Config:
+        extra = "allow"
 
 
 # --- Reportes climáticos ---
