@@ -28,6 +28,12 @@ async def correlation_id_middleware(request: Request, call_next):
     request.state.correlation_id = cid
     response = await call_next(request)
     response.headers["X-Correlation-Id"] = cid
+    # Security headers (básicos; HSTS solo si se fuerza vía edge/TLS)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    if os.getenv("ENRUTA_HSTS", "").lower() == "true":
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     return response
 
 app.include_router(auth.router)
