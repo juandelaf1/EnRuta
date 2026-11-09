@@ -1,3 +1,4 @@
+import os
 import uuid
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,10 +12,11 @@ app = FastAPI(
     version="0.1.0",
 )
 
+_cors_origins = [o.strip() for o in os.getenv("ENRUTA_CORS_ORIGINS", "*").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=False,  # Bearer/API key auth; no cookies
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -38,6 +40,11 @@ app.include_router(weather.router)
 @app.on_event("startup")
 def startup():
     init_db()
+    if os.getenv("ENRUTA_SECRET_KEY", "") in ("", "enruta-secret-change-in-production") and os.getenv("ENRUTA_ENV", "").lower() != "test":
+        import logging
+        logging.getLogger(__name__).warning(
+            "ENRUTA_SECRET_KEY usa valor por defecto/dev o no está configurada; configurar secreto fuerte en producción (P7/seguridad)."
+        )
 
 
 @app.get("/health")
