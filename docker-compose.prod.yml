@@ -1,0 +1,32 @@
+# Producción (plantilla genérica) — NO commitear secretos. Usar secret manager/variables del proveedor.
+# Requisitos: PostgreSQL gestionada (recomendado) o volumen persistente si SQLite demo; TLS en reverse proxy/edge.
+# Ajustar imagen/registry según plataforma.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: enruta-api:${ENRUTA_IMAGE_TAG:-prod}
+    restart: unless-stopped
+    environment:
+      ENRUTA_ENV: production
+      ENRUTA_SECRET_KEY: ${ENRUTA_SECRET_KEY:?set-in-secret-manager}
+      ENRUTA_CORS_ORIGINS: ${ENRUTA_CORS_ORIGINS:?https://tu-dominio}
+      SKYCAST_URL: ${SKYCAST_URL:-}
+      ENRUTA_M2M_KEYS: ${ENRUTA_M2M_KEYS:-}
+      ENRUTA_M2M_RATE_LIMIT: ${ENRUTA_M2M_RATE_LIMIT:-120/minute}
+      ENRUTA_AUDIT_FILE: ${ENRUTA_AUDIT_FILE:-/app/data/audit/enruta-audit.jsonl}
+      # DATABASE_URL: ${DATABASE_URL:?postgresql+...}  # cuando se migre a Postgres/PostGIS
+    ports:
+      - "${ENRUTA_PORT:-8000}:8000"
+    volumes:
+      - enruta_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  enruta_data:

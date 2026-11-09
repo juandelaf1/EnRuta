@@ -40,11 +40,14 @@ app.include_router(weather.router)
 @app.on_event("startup")
 def startup():
     init_db()
-    if os.getenv("ENRUTA_SECRET_KEY", "") in ("", "enruta-secret-change-in-production") and os.getenv("ENRUTA_ENV", "").lower() != "test":
+    _secret = os.getenv("ENRUTA_SECRET_KEY", "")
+    _env = os.getenv("ENRUTA_ENV", "").lower()
+    if _secret in ("", "enruta-secret-change-in-production") and _env != "test":
+        msg = "ENRUTA_SECRET_KEY usa valor por defecto/dev o no está configurada; configurar secreto fuerte en producción (P7/seguridad)."
+        if _env == "production":
+            raise RuntimeError(msg)
         import logging
-        logging.getLogger(__name__).warning(
-            "ENRUTA_SECRET_KEY usa valor por defecto/dev o no está configurada; configurar secreto fuerte en producción (P7/seguridad)."
-        )
+        logging.getLogger(__name__).warning(msg)
 
 
 @app.get("/health")
