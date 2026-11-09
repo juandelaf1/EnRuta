@@ -1,14 +1,34 @@
-"""Rate limit mínimo en memoria (D5)."""
+"""Rate limit (D5). In-memory por defecto; opcional Redis si REDIS_URL está configurado y `redis` instalado."""
 from __future__ import annotations
 
 import os
 import time
 from collections import defaultdict, deque
-from typing import Deque, Dict, Tuple
+from typing import Deque, Dict, Optional, Tuple
 
 from fastapi import HTTPException, Request
 
 _buckets: Dict[str, Deque[float]] = defaultdict(deque)
+_redis = None
+_redis_checked = False
+
+
+def _get_redis():
+    global _redis, _redis_checked
+    if _redis_checked:
+        return _redis
+    _redis_checked = True
+    url = os.getenv("REDIS_URL", "").strip()
+    if not url:
+        return None
+    try:
+        import redis  # type: ignore
+
+        _redis = redis.Redis.from_url(url, decode_responses=True)
+        _redis.ping()
+    except Exception:
+        _redis = None
+    return _redis
 
 
 def _parse_limit(spec: str) -> Tuple[int, int]:
@@ -27,7 +47,21 @@ def rate_limit(spec_env: str, default: str = "60/minute"):
 
     async def _dep(request: Request):
         caller = getattr(request.state, "caller", None) or (request.client.host if request.client else "unknown")
-        key = f"{spec_env}:{caller}"
+        key = f"rl:{spec_env}:{caller}"
+        r = _get_redis()
+        if r is not None:
+            try:
+                # fixed window counter (simple, escalable); TTL = window
+                n = r.incr(key)
+                if n == 1:
+                    r.expire(key, window)
+                if int(n) > limit_n:
+                    raise HTTPException(status_code=429, detail="rate_limit_exceeded")
+                return
+            except HTTPException:
+                raise
+            except Exception:
+                pass  # fallback memoria
         now = time.time()
         q = _buckets[key]
         while q and q[0] <= now - window:
