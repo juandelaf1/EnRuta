@@ -63,6 +63,16 @@ def health():
     }
 
 
+@app.get("/ready")
+def ready():
+    try:
+        conn = get_connection()
+        conn.execute("SELECT 1")
+        return {"ready": True, "database": "connected", "service": "enruta-api"}
+    except Exception as exc:
+        return {"ready": False, "database": "unavailable", "detail": str(exc)}
+
+
 @app.get("/provincias", response_model=list[ProvinciaResponse])
 def list_provincias():
     conn = get_connection()
