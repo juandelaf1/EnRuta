@@ -1,0 +1,1805 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "EnRuta API",
+    "description": "Logística colaborativa rural + inteligencia climática",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register",
+        "operationId": "register_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRegister"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Me",
+        "operationId": "me_auth_me_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ofertas": {
+      "get": {
+        "tags": [
+          "ofertas"
+        ],
+        "summary": "List Ofertas",
+        "operationId": "list_ofertas_ofertas_get",
+        "parameters": [
+          {
+            "name": "activas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Activas"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OfertaResponse"
+                  },
+                  "title": "Response List Ofertas Ofertas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ofertas"
+        ],
+        "summary": "Create Oferta",
+        "operationId": "create_oferta_ofertas_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfertaCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfertaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ofertas/{oferta_id}": {
+      "get": {
+        "tags": [
+          "ofertas"
+        ],
+        "summary": "Get Oferta",
+        "operationId": "get_oferta_ofertas__oferta_id__get",
+        "parameters": [
+          {
+            "name": "oferta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Oferta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfertaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demandas": {
+      "get": {
+        "tags": [
+          "demandas"
+        ],
+        "summary": "List Demandas",
+        "operationId": "list_demandas_demandas_get",
+        "parameters": [
+          {
+            "name": "activas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Activas"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DemandaResponse"
+                  },
+                  "title": "Response List Demandas Demandas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "demandas"
+        ],
+        "summary": "Create Demanda",
+        "operationId": "create_demanda_demandas_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemandaCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demandas/{demanda_id}": {
+      "get": {
+        "tags": [
+          "demandas"
+        ],
+        "summary": "Get Demanda",
+        "operationId": "get_demanda_demandas__demanda_id__get",
+        "parameters": [
+          {
+            "name": "demanda_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Demanda Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/matches": {
+      "get": {
+        "tags": [
+          "matches"
+        ],
+        "summary": "List Matches",
+        "operationId": "list_matches_matches_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MatchResponse"
+                  },
+                  "title": "Response List Matches Matches Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/matches/run": {
+      "post": {
+        "tags": [
+          "matches"
+        ],
+        "summary": "Run Matching",
+        "description": "Ejecuta el matching engine y devuelve resumen.",
+        "operationId": "run_matching_matches_run_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/matches/{match_id}/accept": {
+      "post": {
+        "tags": [
+          "matches"
+        ],
+        "summary": "Accept Match",
+        "operationId": "accept_match_matches__match_id__accept_post",
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Match Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/matches/evaluate": {
+      "post": {
+        "tags": [
+          "matches"
+        ],
+        "summary": "Evaluate Matches",
+        "description": "Evaluación stateless (sin persistir): acoplamiento Poolar L1 / uso autónomo.\n\nRecibe ofertas+demandas y devuelve matches explicados (desvío, km, score, CO2 estimado,\nprocedencia). No modifica la base de datos. Auth: usuario (JWT) o m2m scope logistics:evaluate (D5).",
+        "operationId": "evaluate_matches_matches_evaluate_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchEvaluateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchEvaluateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weather/report": {
+      "post": {
+        "tags": [
+          "weather"
+        ],
+        "summary": "Reportar Clima",
+        "description": "Un transportista reporta condiciones climáticas en su ubicación actual.",
+        "operationId": "reportar_clima_weather_report_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReporteClimaticoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteClimaticoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weather/reportes": {
+      "get": {
+        "tags": [
+          "weather"
+        ],
+        "summary": "List Reportes",
+        "operationId": "list_reportes_weather_reportes_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReporteClimaticoResponse"
+                  },
+                  "title": "Response List Reportes Weather Reportes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weather/reportes/provincia/{provincia_id}": {
+      "get": {
+        "tags": [
+          "weather"
+        ],
+        "summary": "Reportes Por Provincia",
+        "operationId": "reportes_por_provincia_weather_reportes_provincia__provincia_id__get",
+        "parameters": [
+          {
+            "name": "provincia_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Provincia Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReporteClimaticoResponse"
+                  },
+                  "title": "Response Reportes Por Provincia Weather Reportes Provincia  Provincia Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/provincias": {
+      "get": {
+        "summary": "List Provincias",
+        "operationId": "list_provincias_provincias_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProvinciaResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Provincias Provincias Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DemandaCreate": {
+        "properties": {
+          "origen_localidad": {
+            "type": "string",
+            "title": "Origen Localidad"
+          },
+          "origen_lat": {
+            "type": "number",
+            "title": "Origen Lat"
+          },
+          "origen_lon": {
+            "type": "number",
+            "title": "Origen Lon"
+          },
+          "destino_localidad": {
+            "type": "string",
+            "title": "Destino Localidad"
+          },
+          "destino_lat": {
+            "type": "number",
+            "title": "Destino Lat"
+          },
+          "destino_lon": {
+            "type": "number",
+            "title": "Destino Lon"
+          },
+          "kg": {
+            "type": "number",
+            "title": "Kg"
+          },
+          "producto": {
+            "type": "string",
+            "title": "Producto"
+          },
+          "urgente": {
+            "type": "integer",
+            "title": "Urgente",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "origen_localidad",
+          "origen_lat",
+          "origen_lon",
+          "destino_localidad",
+          "destino_lat",
+          "destino_lon",
+          "kg",
+          "producto"
+        ],
+        "title": "DemandaCreate"
+      },
+      "DemandaEval": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "origen_localidad": {
+            "type": "string",
+            "title": "Origen Localidad",
+            "default": ""
+          },
+          "origen_lat": {
+            "type": "number",
+            "title": "Origen Lat"
+          },
+          "origen_lon": {
+            "type": "number",
+            "title": "Origen Lon"
+          },
+          "destino_localidad": {
+            "type": "string",
+            "title": "Destino Localidad",
+            "default": ""
+          },
+          "destino_lat": {
+            "type": "number",
+            "title": "Destino Lat"
+          },
+          "destino_lon": {
+            "type": "number",
+            "title": "Destino Lon"
+          },
+          "kg": {
+            "type": "number",
+            "title": "Kg"
+          },
+          "producto": {
+            "type": "string",
+            "title": "Producto",
+            "default": ""
+          },
+          "productor": {
+            "type": "string",
+            "title": "Productor",
+            "default": ""
+          },
+          "urgente": {
+            "type": "integer",
+            "title": "Urgente",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "origen_lat",
+          "origen_lon",
+          "destino_lat",
+          "destino_lon",
+          "kg"
+        ],
+        "title": "DemandaEval"
+      },
+      "DemandaResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "productor_id": {
+            "type": "integer",
+            "title": "Productor Id"
+          },
+          "origen_localidad": {
+            "type": "string",
+            "title": "Origen Localidad"
+          },
+          "origen_lat": {
+            "type": "number",
+            "title": "Origen Lat"
+          },
+          "origen_lon": {
+            "type": "number",
+            "title": "Origen Lon"
+          },
+          "destino_localidad": {
+            "type": "string",
+            "title": "Destino Localidad"
+          },
+          "destino_lat": {
+            "type": "number",
+            "title": "Destino Lat"
+          },
+          "destino_lon": {
+            "type": "number",
+            "title": "Destino Lon"
+          },
+          "kg": {
+            "type": "number",
+            "title": "Kg"
+          },
+          "producto": {
+            "type": "string",
+            "title": "Producto"
+          },
+          "urgente": {
+            "type": "integer",
+            "title": "Urgente"
+          },
+          "activa": {
+            "type": "integer",
+            "title": "Activa"
+          },
+          "coste_enruta_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coste Enruta Eur"
+          },
+          "coste_tradicional_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coste Tradicional Eur"
+          },
+          "ahorro_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahorro Eur"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "productor_id",
+          "origen_localidad",
+          "origen_lat",
+          "origen_lon",
+          "destino_localidad",
+          "destino_lat",
+          "destino_lon",
+          "kg",
+          "producto",
+          "urgente",
+          "activa"
+        ],
+        "title": "DemandaResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MatchEvalResult": {
+        "properties": {
+          "oferta_id": {
+            "type": "integer",
+            "title": "Oferta Id"
+          },
+          "demanda_id": {
+            "type": "integer",
+            "title": "Demanda Id"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "extra_km": {
+            "type": "number",
+            "title": "Extra Km"
+          },
+          "detour_pct": {
+            "type": "number",
+            "title": "Detour Pct"
+          },
+          "ruta_original_km": {
+            "type": "number",
+            "title": "Ruta Original Km"
+          },
+          "ahorro_co2_kg": {
+            "type": "number",
+            "title": "Ahorro Co2 Kg"
+          },
+          "capacidad_usada_pct": {
+            "type": "number",
+            "title": "Capacidad Usada Pct"
+          },
+          "fuente": {
+            "type": "string",
+            "title": "Fuente"
+          },
+          "ruta": {
+            "type": "string",
+            "title": "Ruta",
+            "default": ""
+          },
+          "producto": {
+            "type": "string",
+            "title": "Producto",
+            "default": ""
+          },
+          "procedencia": {
+            "type": "string",
+            "title": "Procedencia",
+            "default": "estimado (haversine*1.3, motor simulacion-sobre-base-real)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "oferta_id",
+          "demanda_id",
+          "score",
+          "extra_km",
+          "detour_pct",
+          "ruta_original_km",
+          "ahorro_co2_kg",
+          "capacidad_usada_pct",
+          "fuente"
+        ],
+        "title": "MatchEvalResult"
+      },
+      "MatchEvaluateRequest": {
+        "properties": {
+          "ofertas": {
+            "items": {
+              "$ref": "#/components/schemas/OfertaEval"
+            },
+            "type": "array",
+            "title": "Ofertas"
+          },
+          "demandas": {
+            "items": {
+              "$ref": "#/components/schemas/DemandaEval"
+            },
+            "type": "array",
+            "title": "Demandas"
+          },
+          "max_detour_pct": {
+            "type": "number",
+            "title": "Max Detour Pct",
+            "default": 20
+          },
+          "max_detour_km": {
+            "type": "number",
+            "title": "Max Detour Km",
+            "default": 50
+          },
+          "top_k": {
+            "type": "integer",
+            "title": "Top K",
+            "default": 500
+          }
+        },
+        "type": "object",
+        "required": [
+          "ofertas",
+          "demandas"
+        ],
+        "title": "MatchEvaluateRequest"
+      },
+      "MatchEvaluateResponse": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "default": "logistics-l1/0.1"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/MatchEvalResult"
+            },
+            "type": "array",
+            "title": "Matches"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "procedencia": {
+            "type": "string",
+            "title": "Procedencia",
+            "default": "estimado; actores/datos pueden ser simulados segun origen"
+          }
+        },
+        "type": "object",
+        "required": [
+          "matches",
+          "count"
+        ],
+        "title": "MatchEvaluateResponse"
+      },
+      "MatchResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "oferta_id": {
+            "type": "integer",
+            "title": "Oferta Id"
+          },
+          "demanda_id": {
+            "type": "integer",
+            "title": "Demanda Id"
+          },
+          "ahorro_estimado": {
+            "type": "number",
+            "title": "Ahorro Estimado"
+          },
+          "co2_evitado_kg": {
+            "type": "number",
+            "title": "Co2 Evitado Kg"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score",
+            "default": 0
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado",
+            "default": "pendiente"
+          },
+          "coste_enruta_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coste Enruta Eur"
+          },
+          "coste_tradicional_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coste Tradicional Eur"
+          },
+          "ahorro_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahorro Eur"
+          },
+          "ingreso_transportista_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingreso Transportista Eur"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "oferta_id",
+          "demanda_id",
+          "ahorro_estimado",
+          "co2_evitado_kg"
+        ],
+        "title": "MatchResponse"
+      },
+      "OfertaCreate": {
+        "properties": {
+          "origen_localidad": {
+            "type": "string",
+            "title": "Origen Localidad"
+          },
+          "origen_lat": {
+            "type": "number",
+            "title": "Origen Lat"
+          },
+          "origen_lon": {
+            "type": "number",
+            "title": "Origen Lon"
+          },
+          "destino_localidad": {
+            "type": "string",
+            "title": "Destino Localidad"
+          },
+          "destino_lat": {
+            "type": "number",
+            "title": "Destino Lat"
+          },
+          "destino_lon": {
+            "type": "number",
+            "title": "Destino Lon"
+          },
+          "fecha": {
+            "type": "string",
+            "title": "Fecha",
+            "default": ""
+          },
+          "capacidad_disponible_kg": {
+            "type": "number",
+            "title": "Capacidad Disponible Kg"
+          },
+          "precio_sugerido": {
+            "type": "number",
+            "title": "Precio Sugerido",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "origen_localidad",
+          "origen_lat",
+          "origen_lon",
+          "destino_localidad",
+          "destino_lat",
+          "destino_lon",
+          "capacidad_disponible_kg"
+        ],
+        "title": "OfertaCreate"
+      },
+      "OfertaEval": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "origen_localidad": {
+            "type": "string",
+            "title": "Origen Localidad",
+            "default": ""
+          },
+          "origen_lat": {
+            "type": "number",
+            "title": "Origen Lat"
+          },
+          "origen_lon": {
+            "type": "number",
+            "title": "Origen Lon"
+          },
+          "destino_localidad": {
+            "type": "string",
+            "title": "Destino Localidad",
+            "default": ""
+          },
+          "destino_lat": {
+            "type": "number",
+            "title": "Destino Lat"
+          },
+          "destino_lon": {
+            "type": "number",
+            "title": "Destino Lon"
+          },
+          "capacidad_disponible_kg": {
+            "type": "number",
+            "title": "Capacidad Disponible Kg"
+          },
+          "transportista": {
+            "type": "string",
+            "title": "Transportista",
+            "default": ""
+          },
+          "capacidad_kg": {
+            "type": "number",
+            "title": "Capacidad Kg",
+            "default": 0
+          },
+          "fecha": {
+            "type": "string",
+            "title": "Fecha",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "origen_lat",
+          "origen_lon",
+          "destino_lat",
+          "destino_lon",
+          "capacidad_disponible_kg"
+        ],
+        "title": "OfertaEval"
+      },
+      "OfertaResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "transportista_id": {
+            "type": "integer",
+            "title": "Transportista Id"
+          },
+          "origen_localidad": {
+            "type": "string",
+            "title": "Origen Localidad"
+          },
+          "origen_lat": {
+            "type": "number",
+            "title": "Origen Lat"
+          },
+          "origen_lon": {
+            "type": "number",
+            "title": "Origen Lon"
+          },
+          "destino_localidad": {
+            "type": "string",
+            "title": "Destino Localidad"
+          },
+          "destino_lat": {
+            "type": "number",
+            "title": "Destino Lat"
+          },
+          "destino_lon": {
+            "type": "number",
+            "title": "Destino Lon"
+          },
+          "fecha": {
+            "type": "string",
+            "title": "Fecha"
+          },
+          "capacidad_disponible_kg": {
+            "type": "number",
+            "title": "Capacidad Disponible Kg"
+          },
+          "precio_sugerido": {
+            "type": "number",
+            "title": "Precio Sugerido"
+          },
+          "activa": {
+            "type": "integer",
+            "title": "Activa"
+          },
+          "ingreso_estimado_eur": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingreso Estimado Eur"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "transportista_id",
+          "origen_localidad",
+          "origen_lat",
+          "origen_lon",
+          "destino_localidad",
+          "destino_lat",
+          "destino_lon",
+          "fecha",
+          "capacidad_disponible_kg",
+          "precio_sugerido",
+          "activa"
+        ],
+        "title": "OfertaResponse"
+      },
+      "ProvinciaResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "comunidad": {
+            "type": "string",
+            "title": "Comunidad"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "codigo",
+          "comunidad"
+        ],
+        "title": "ProvinciaResponse"
+      },
+      "ReporteClimaticoCreate": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "temperatura_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperatura C"
+          },
+          "precipitacion_mm_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precipitacion Mm H"
+          },
+          "viento_kmh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viento Kmh"
+          },
+          "visibilidad_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibilidad Km"
+          },
+          "nota": {
+            "type": "string",
+            "title": "Nota",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "ReporteClimaticoCreate"
+      },
+      "ReporteClimaticoResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "usuario_id": {
+            "type": "integer",
+            "title": "Usuario Id"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "temperatura_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperatura C"
+          },
+          "precipitacion_mm_h": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precipitacion Mm H"
+          },
+          "viento_kmh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viento Kmh"
+          },
+          "alerta": {
+            "type": "string",
+            "title": "Alerta"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "nota": {
+            "type": "string",
+            "title": "Nota"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario_id",
+          "lat",
+          "lon",
+          "temperatura_c",
+          "precipitacion_mm_h",
+          "viento_kmh",
+          "alerta",
+          "estado",
+          "nota"
+        ],
+        "title": "ReporteClimaticoResponse"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "user"
+        ],
+        "title": "TokenResponse"
+      },
+      "UserLogin": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserLogin"
+      },
+      "UserRegister": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "title": "Password"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono",
+            "default": ""
+          },
+          "provincia_id": {
+            "type": "integer",
+            "title": "Provincia Id",
+            "default": 0
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo",
+            "default": "transportista"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "nombre"
+        ],
+        "title": "UserRegister"
+      },
+      "UserResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "telefono": {
+            "type": "string",
+            "title": "Telefono"
+          },
+          "provincia_id": {
+            "type": "integer",
+            "title": "Provincia Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "nombre",
+          "tipo",
+          "telefono",
+          "provincia_id"
+        ],
+        "title": "UserResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
