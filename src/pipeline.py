@@ -20,17 +20,20 @@ def step1_provincias():
 def step2_municipios():
     data = get_municipios()
     df = pd.DataFrame(data, columns=["id", "nombre", "provincia_id", "lat", "lon", "poblacion_2024"])
+    df["codigo_ine"] = ""
+    df = df[["id", "nombre", "provincia_id", "codigo_ine", "lat", "lon", "poblacion_2024"]]
     write_df(df, "municipios", if_exists="replace")
     total_pop = df["poblacion_2024"].sum()
-    print(f"[EnRuta] {len(df)} municipios cargados (población total: {total_pop:,})")
+    print(f"[EnRuta] {len(df)} municipios cargados (base municipal real/curada INE 2024; población total: {total_pop:,})")
 
 
 def step3_datos_sinteticos():
     """
-    Genera datos sintéticos de productores y transportistas para el MVP.
-    Basado en distribución real de municipios.
-    
-    T E C H   D E B T : Sustituir por datos reales de MAPA, MITMA e INE.
+    Genera actores sintéticos (productores, transportistas, ofertas, demandas) para el MVP,
+    distribuidos sobre la base municipal real cargada en step2.
+    Los actores/ofertas NO son registros reales; se etiquetan como simulación reproducible (seed 42).
+
+    TECH DEBT: sustituir o complementar con datos reales de MAPA/MITMA cuando exista fuente viable.
     """
     conn = get_connection()
     muns = pd.read_sql("SELECT * FROM municipios", conn)
@@ -63,7 +66,7 @@ def step3_datos_sinteticos():
 
     df_prod = pd.DataFrame(productores_rows)
     write_df(df_prod, "productores", if_exists="replace")
-    print(f"[EnRuta] {len(df_prod)} productores sintéticos generados")
+    print(f"[EnRuta] {len(df_prod)} productores sintéticos generados (simulación, seed 42)")
 
     # Transportistas: 1-3 por municipio
     tid = 0
@@ -85,7 +88,7 @@ def step3_datos_sinteticos():
 
     df_trans = pd.DataFrame(transpo_rows)
     write_df(df_trans, "transportistas", if_exists="replace")
-    print(f"[EnRuta] {len(df_trans)} transportistas sintéticos generados")
+    print(f"[EnRuta] {len(df_trans)} transportistas sintéticos generados (simulación, seed 42)")
 
     # Ofertas: viajes de los transportistas
     oid = 0
@@ -112,7 +115,7 @@ def step3_datos_sinteticos():
 
     df_ofertas = pd.DataFrame(ofertas_rows)
     write_df(df_ofertas, "ofertas", if_exists="replace")
-    print(f"[EnRuta] {len(df_ofertas)} ofertas sintéticas generadas")
+    print(f"[EnRuta] {len(df_ofertas)} ofertas sintéticas generadas (simulación, seed 42)")
 
     # Demandas: pedidos de los productores
     did = 0
@@ -139,7 +142,7 @@ def step3_datos_sinteticos():
 
     df_demandas = pd.DataFrame(demandas_rows)
     write_df(df_demandas, "demandas", if_exists="replace")
-    print(f"[EnRuta] {len(df_demandas)} demandas sintéticas generadas")
+    print(f"[EnRuta] {len(df_demandas)} demandas sintéticas generadas (simulación, seed 42)")
 
 
 def run_pipeline():

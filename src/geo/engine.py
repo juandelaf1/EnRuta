@@ -70,7 +70,7 @@ def detour_ratio(transp_orig_lat, transp_orig_lon, transp_dest_lat, transp_dest_
 
 
 def cluster_puntos(puntos, radio_km=20):
-    """Agrupa puntos (lat, lon) cercanos dentro de un radio."""
+    """Agrupa puntos (lat, lon) cercanos dentro de un radio (Haversine, O(n^2), compat)."""
     clusters = []
     usados = set()
     for i, (lat1, lon1) in enumerate(puntos):
@@ -83,4 +83,37 @@ def cluster_puntos(puntos, radio_km=20):
                 grupo.append((lat2, lon2))
                 usados.add(j)
         clusters.append(grupo)
+    return clusters
+
+
+def cluster_puntos_geo(puntos, radio_km=20):
+    """Agrupa puntos (lat, lon) por cobertura de buffer (GeoPandas+Shapely).
+
+    Aporta proximidad/cobertura real en CRS métrico (backlog P1). Si GeoPandas no está
+    disponible, cae al clustering Haversine para compatibilidad.
+    """
+    try:
+        import geopandas as gpd
+        from shapely.geometry import Point
+    except Exception:
+        return cluster_puntos(puntos, radio_km)
+    if not puntos:
+        return []
+    gdf = gpd.GeoDataFrame(
+        {"idx": list(range(len(puntos)))},
+        geometry=[Point(lon, lat) for lat, lon in puntos],
+        crs="EPSG:4326",
+    ).to_crs("EPSG:3857")
+    buffers = gdf.geometry.buffer(radio_km * 1000.0)
+    used = set()
+    clusters = []
+    for i in range(len(gdf)):
+        if i in used:
+            continue
+        members = gdf.index[buffers.iloc[i].contains(gdf.geometry) | gdf.geometry.within(buffers.iloc[i])]
+        grupo = [puntos[j] for j in members if j not in used]
+        for j in members:
+            used.add(j)
+        if grupo:
+            clusters.append(grupo)
     return clusters

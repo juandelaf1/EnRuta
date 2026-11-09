@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import List
-from src.api.models import MatchResponse
-from src.api.deps import get_current_user_dep
+import pandas as pd
+from src.api.models import MatchResponse, MatchEvaluateRequest, MatchEvaluateResponse, MatchEvalResult
+from src.api.deps import get_current_user_dep, get_logistics_evaluate_principal
 from src.api.auth import UserInDB
+from src.api.audit import audit_integration
+from src.api.rate_limit import rate_limit
 from src.database import get_connection
-from src.matching.engine import match_all
+from src.matching.engine import match_all, compute_matches
 from src.geo.engine import haversine
 from src import pricing
 
@@ -73,3 +76,49 @@ def accept_match(match_id: int, user: UserInDB = Depends(get_current_user_dep)):
     conn.execute("UPDATE matches SET estado = 'aceptado' WHERE id = ?", (match_id,))
     conn.commit()
     return {"status": "aceptado", "match_id": match_id}
+
+
+@router.post("/evaluate", response_model=MatchEvaluateResponse)
+def evaluate_matches(
+    req: MatchEvaluateRequest,
+    request: Request,
+    principal: dict = Depends(get_logistics_evaluate_principal),
+    _rl: None = Depends(rate_limit("ENRUTA_M2M_RATE_LIMIT", "120/minute")),
+):
+    """Evaluación stateless (sin persistir): acoplamiento Poolar L1 / uso autónomo.
+
+    Recibe ofertas+demandas y devuelve matches explicados (desvío, km, score, CO2 estimado,
+    procedencia). No modifica la base de datos. Auth: usuario (JWT) o m2m scope logistics:evaluate (D5).
+    """
+    ofertas = pd.DataFrame([o.model_dump() for o in req.ofertas])
+    demandas = pd.DataFrame([d.model_dump() for d in req.demandas])
+    if ofertas.empty or demandas.empty:
+        audit_integration(request, "logistics-l1/0.1", "ok", {"count": 0})
+        return MatchEvaluateResponse(matches=[], count=0)
+    df = compute_matches(
+        ofertas, demandas,
+        max_detour_pct=req.max_detour_pct,
+        max_detour_km=req.max_detour_km,
+        top_k=req.top_k,
+        verbose=False,
+    )
+    if df is None or df.empty:
+        audit_integration(request, "logistics-l1/0.1", "ok", {"count": 0})
+        return MatchEvaluateResponse(matches=[], count=0)
+    results = []
+    for _, r in df.iterrows():
+        results.append(MatchEvalResult(
+            oferta_id=int(r["oferta_id"]),
+            demanda_id=int(r["demanda_id"]),
+            score=float(r["score"]),
+            extra_km=float(r["extra_km"]),
+            detour_pct=float(r["detour_pct"]),
+            ruta_original_km=float(r.get("ruta_original_km", 0)),
+            ahorro_co2_kg=float(r["ahorro_co2_kg"]),
+            capacidad_usada_pct=float(r["capacidad_usada_pct"]),
+            fuente=str(r.get("fuente", "")),
+            ruta=str(r.get("ruta", "")),
+            producto=str(r.get("producto", "")),
+        ))
+    audit_integration(request, "logistics-l1/0.1", "ok", {"count": len(results)})
+    return MatchEvaluateResponse(matches=results, count=len(results))

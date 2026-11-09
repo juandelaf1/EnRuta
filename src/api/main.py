@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+import uuid
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.routes import auth, ofertas, demandas, matches, weather
 from src.database import init_db, get_connection
@@ -18,6 +19,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def correlation_id_middleware(request: Request, call_next):
+    cid = request.headers.get("X-Correlation-Id") or request.headers.get("X-Request-Id") or str(uuid.uuid4())
+    request.state.correlation_id = cid
+    response = await call_next(request)
+    response.headers["X-Correlation-Id"] = cid
+    return response
+
 app.include_router(auth.router)
 app.include_router(ofertas.router)
 app.include_router(demandas.router)
@@ -32,7 +42,18 @@ def startup():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "0.1.0", "service": "enruta-api"}
+    return {
+        "status": "ok",
+        "version": "0.1.0",
+        "service": "enruta-api",
+        "contract_version": "logistics-l1/0.1",
+        "capabilities": {
+            "matches_evaluate_stateless": True,
+            "matches_run_persisted": True,
+            "weather_route_via_skycast": True,
+            "openapi": "/openapi.json",
+        },
+    }
 
 
 @app.get("/provincias", response_model=list[ProvinciaResponse])

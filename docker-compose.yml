@@ -1,0 +1,39 @@
+services:
+  api:
+    build: .
+    container_name: enruta-api
+    environment:
+      # Modo autónomo por defecto (SQLite). Para PostGIS usar perfil `pg` + DATABASE_URL futuro.
+      SKYCAST_URL: ${SKYCAST_URL:-http://host.docker.internal:8000}
+      ENRUTA_M2M_KEYS: ${ENRUTA_M2M_KEYS:-}
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  postgis:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: enruta-postgis
+    profiles: ["pg"]
+    environment:
+      POSTGRES_USER: enruta
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-enruta_dev}
+      POSTGRES_DB: enruta
+    ports:
+      - "5433:5432"
+    volumes:
+      - enruta_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U enruta -d enruta"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  enruta_pg_data:

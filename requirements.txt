@@ -1,5 +1,22 @@
-dash>=2.0
-plotly>=5.0
-pandas>=1.0
-requests>=2.0
+# Core
+pandas>=1.5
+requests>=2.28
 python-dotenv>=1.0
+
+# Dashboard (Dash)
+dash>=2.14
+plotly>=5.15
+
+# API (FastAPI)
+fastapi>=0.110
+uvicorn>=0.27
+pydantic>=2.0
+
+# Auth (src/api/auth.py)
+python-jose[cryptography]>=3.3
+bcrypt>=4.0
+
+# Geo (proximidad/cobertura) — backlog P1
+geopandas>=0.14
+shapely>=2.0
+pyproj>=3.6

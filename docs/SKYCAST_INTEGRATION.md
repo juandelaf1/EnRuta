@@ -1,55 +1,46 @@
 # SkyCast ↔ EnRuta: Integración
 
-## Estado Actual (Fase 0)
-
-EnRuta usa **OpenWeatherMap directo** como fuente meteorológica primaria,
-con fallback determinista basado en coordenadas. El módulo `src/weather/`
-tiene una interfaz abstracta (`WeatherProvider`) lista para conectar SkyCast
-cuando esté maduro.
+## Estado actual (verificado)
+- Integración **activa** vía `src/weather/client.py` (`SkyCastProvider` → `POST {SKYCAST_URL}/api/v1/route-weather`) y validación en `POST /weather/validate-observation` / `POST /reportes` (EnRuta). SkyCast prefiere **AEMET en España** (observación estación) con fallback **Open-Meteo** (B1/S1-S3 verificados). Contrato clima: `contract_version="skycast-route-weather/0.1"`, procedencia observada por waypoint + estimada en agregación/penalización (ver `../../docs/PROVENANCE_CONVENTION.md`).
+- La abstracción `WeatherProvider` (OpenWeatherMap directo/fallback determinista) sigue disponible como alternativa; el camino “producto real” usa SkyCast. Visión/pendientes abajo se mantienen como backlog.
 
 ---
 
 ## Servicios que EnRuta necesita de SkyCast (futuro)
 
-### 1. `POST /api/v1/route-weather` ⭐ CRÍTICO
+### 1. `POST /api/v1/route-weather` ⭐ CRÍTICO — **implementado (contrato real)**
 
-Weather a lo largo de una ruta, no solo en un punto.
+Weather a lo largo de una ruta (waypoints muestreados). Especificación fuente de verdad: OpenAPI de SkyCast (`/docs`). Contrato versionado: `skycast-route-weather/0.1`.
 
-**Request:**
+**Request (implementado):**
 ```json
 {
-  "origen": {"lat": 40.4168, "lon": -3.7038},
-  "destino": {"lat": 41.3874, "lon": 2.1686},
-  "hora_salida": "2026-06-01T08:00:00Z",
+  "origen_lat": 40.4168, "origen_lon": -3.7038,
+  "destino_lat": 41.3874, "destino_lon": 2.1686,
   "num_samples": 5
 }
 ```
 
-**Response:**
+**Response (implementado, shape estable):**
 ```json
 {
-  "waypoints": [
-    {
-      "lat": 40.4168, "lon": -3.7038,
-      "temperatura_c": 22.5,
-      "precipitacion_mm_h": 0.0,
-      "viento_kmh": 12,
-      "visibilidad_km": 15,
-      "alerta": "verde",
-      "alerta_desc": "",
-      "fuente": "skycast+owm",
-      "timestamp": "2026-06-01T08:00:00Z",
-      "pronostico_h": [
-        {"hora": "09:00", "precip_mm_h": 0.5, "temp_c": 24},
-        {"hora": "10:00", "precip_mm_h": 2.0, "temp_c": 23}
-      ]
-    }
-  ],
+  "contract_version": "skycast-route-weather/0.1",
+  "waypoints": [{
+    "lat": 40.4168, "lon": -3.7038,
+    "temperatura_c": 22.5, "precipitacion_mm_h": 0.0, "viento_kmh": 12,
+    "visibilidad_km": 15.0, "alerta": "verde", "alerta_desc": "",
+    "fuente": "aemet|openmeteo", "timestamp": "...",
+    "procedencia": "observado (aemet|open-meteo)"
+  }],
   "hazard_level": "verde",
-  "duration_penalty_pct": 0,
-  "summary": "Sin incidencias en ruta"
+  "duration_penalty_pct": 0.0,
+  "co2_penalty_pct": 0.0,
+  "summary": "Sin incidencias",
+  "fuente": "aemet, openmeteo",
+  "procedencia": "observado (...) + estimado (agregacion/penalizacion)"
 }
 ```
+> Nota: `hora_salida`/`pronostico_h` y el formato `origen/destino` objeto son **backlog/objetivo** (no implementados en el shape actual). `src/weather/client.py` de EnRuta ya consume el shape implementado.
 
 ---
 

@@ -11,33 +11,23 @@ def cached_distancia(lat1, lon1, lat2, lon2):
     return distancia_optima(lat1, lon1, lat2, lon2)
 
 
-def match_all(max_detour_pct=20, max_detour_km=50, top_k=2000):
-    conn = get_connection()
+def _log(verbose, *args, **kwargs):
+    if verbose:
+        print(*args, **kwargs)
 
-    ofertas = read_sql("""
-        SELECT o.*,
-               COALESCE(t.nombre, u.nombre) as transportista,
-               COALESCE(t.capacidad_kg, 1000) as capacidad_kg
-        FROM ofertas o
-        LEFT JOIN transportistas t ON o.transportista_id = t.id
-        LEFT JOIN usuarios u ON o.transportista_id = u.id
-        WHERE o.activa = 1
-    """)
 
-    demandas = read_sql("""
-        SELECT d.*,
-               COALESCE(p.nombre, u.nombre) as productor,
-               COALESCE(p.tipo, 'general') as producto_tipo
-        FROM demandas d
-        LEFT JOIN productores p ON d.productor_id = p.id
-        LEFT JOIN usuarios u ON d.productor_id = u.id
-        WHERE d.activa = 1
-    """)
+def compute_matches(ofertas, demandas, max_detour_pct=20, max_detour_km=50, top_k=2000, verbose=False):
+    """Núcleo puro de matching (sin DB): ofertas x demandas -> DataFrame de matches.
 
-    if ofertas.empty or demandas.empty:
+    Entradas: DataFrames (o iterables compatibles con .iterrows()/campos) con los campos
+    usados por el motor (ids, coords origen/destino, kg/capacidad, nombres/ruta/producto, urgente).
+    Salida: DataFrame ordenado por score (mismo esquema que produce match_all), sin persistir.
+    Pensado para uso stateless/acoplable (Poolar L1).
+    """
+    if ofertas is None or demandas is None or len(ofertas) == 0 or len(demandas) == 0:
         return pd.DataFrame()
 
-    print(f"[Match] Evaluando {len(ofertas)} ofertas x {len(demandas)} demandas con Haversine...")
+    _log(verbose, f"[Match] Evaluando {len(ofertas)} ofertas x {len(demandas)} demandas con Haversine...")
 
     candidates = []
     for _, of in ofertas.iterrows():
@@ -72,16 +62,16 @@ def match_all(max_detour_pct=20, max_detour_km=50, top_k=2000):
             cap_ratio = de["kg"] / of["capacidad_disponible_kg"]
             if cap_ratio > 0.8:
                 score_hav += 10
-            if de["urgente"]:
+            if de.get("urgente"):
                 score_hav += 15
 
             candidates.append({
                 "oferta_id": int(of["id"]),
                 "demanda_id": int(de["id"]),
-                "transportista": of["transportista"],
-                "productor": de["productor"],
-                "producto": de["producto"],
-                "ruta": f"{of['origen_localidad']} -> {of['destino_localidad']}",
+                "transportista": of.get("transportista", ""),
+                "productor": de.get("productor", ""),
+                "producto": de.get("producto", ""),
+                "ruta": f"{of.get('origen_localidad','')} -> {of.get('destino_localidad','')}",
                 "h_orig_lat": of["origen_lat"], "h_orig_lon": of["origen_lon"],
                 "h_dest_lat": of["destino_lat"], "h_dest_lon": of["destino_lon"],
                 "p_orig_lat": de["origen_lat"], "p_orig_lon": de["origen_lon"],
@@ -93,16 +83,16 @@ def match_all(max_detour_pct=20, max_detour_km=50, top_k=2000):
             })
 
     if not candidates:
-        print("[Match] Sin candidatos tras filtro Haversine")
+        _log(verbose, "[Match] Sin candidatos tras filtro Haversine")
         return pd.DataFrame()
 
     df_candidates = pd.DataFrame(candidates).sort_values("score_hav", ascending=False)
-    print(f"[Match] {len(df_candidates)} candidatos, usando top {top_k}")
+    _log(verbose, f"[Match] {len(df_candidates)} candidatos, usando top {top_k}")
 
     top = df_candidates.head(top_k)
     matches = []
     for i, (_, row) in enumerate(top.iterrows()):
-        if i % 200 == 0:
+        if verbose and i % 200 == 0:
             print(f"  ... {i}/{min(top_k, len(top))}", end="\r")
 
         factor_carretera = 1.3
@@ -157,15 +147,45 @@ def match_all(max_detour_pct=20, max_detour_km=50, top_k=2000):
             "fuente": "haversine_1.3x",
         })
 
-    print()
+    if verbose:
+        print()
     df = pd.DataFrame(matches)
     if df.empty:
-        print("[Match] No se encontraron matches")
+        _log(verbose, "[Match] No se encontraron matches")
+        return df
+    return df.sort_values("score", ascending=False)
+
+
+def match_all(max_detour_pct=20, max_detour_km=50, top_k=2000):
+    conn = get_connection()
+
+    ofertas = read_sql("""
+        SELECT o.*,
+               COALESCE(t.nombre, u.nombre) as transportista,
+               COALESCE(t.capacidad_kg, 1000) as capacidad_kg
+        FROM ofertas o
+        LEFT JOIN transportistas t ON o.transportista_id = t.id
+        LEFT JOIN usuarios u ON o.transportista_id = u.id
+        WHERE o.activa = 1
+    """)
+
+    demandas = read_sql("""
+        SELECT d.*,
+               COALESCE(p.nombre, u.nombre) as productor,
+               COALESCE(p.tipo, 'general') as producto_tipo
+        FROM demandas d
+        LEFT JOIN productores p ON d.productor_id = p.id
+        LEFT JOIN usuarios u ON d.productor_id = u.id
+        WHERE d.activa = 1
+    """)
+
+    if ofertas.empty or demandas.empty:
+        return pd.DataFrame()
+
+    df = compute_matches(ofertas, demandas, max_detour_pct=max_detour_pct, max_detour_km=max_detour_km, top_k=top_k, verbose=True)
+    if df.empty:
         return df
 
-    df = df.sort_values("score", ascending=False)
-
-    conn = get_connection()
     conn.execute("DELETE FROM matches WHERE estado = 'pendiente'")
     for _, row in df.iterrows():
         conn.execute(

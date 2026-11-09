@@ -1,23 +1,36 @@
 import requests
 import pandas as pd
 from pathlib import Path
-from src.config import DATA_RAW, INE_API_BASE
+from src.config import DATA_RAW, INE_API_BASE, INE_POBLACION_ID
 
-def download_poblacion_municipal():
+def download_poblacion_municipal(table_id=None):
     """
-    Descarga población por municipio desde el INE (API JSON).
-    Tabla ID 573: población por municipio, sexo y año.
+    Descarga población por municipio desde el INE (API JSON, best-effort).
+    La API Tempus3 y los IDs de tabla cambian; si falla, usar la base municipal estática (municipios_data).
     """
-    url = f"{INE_API_BASE}/DATOS_TABLA/{INE_POBLACION_ID}"
-    print(f"[INE] Descargando población municipal desde {url}...")
+    table_id = table_id or INE_POBLACION_ID
+    url = f"{INE_API_BASE}/DATOS_TABLA/{table_id}"
+    print(f"[INE] Descargando población municipal desde {url} (best-effort)...")
     try:
-        r = requests.get(url, params={"date": "2024-01-01"}, timeout=30)
-        r.raise_for_status()
-        data = r.json()
+        r = requests.get(url, params={"nult": 1}, timeout=30)
+        if r.status_code != 200:
+            print(f"[INE] API no disponible/tabla inválida (HTTP {r.status_code}); usando fallback estático.")
+            return None
+        try:
+            data = r.json()
+        except ValueError:
+            print("[INE] Respuesta no JSON; usando fallback estático.")
+            return None
+        if isinstance(data, dict) and data.get("status"):
+            print(f"[INE] API devolvió estado {data.get('status')}; usando fallback estático.")
+            return None
+        if not isinstance(data, list):
+            print("[INE] Formato inesperado; usando fallback estático.")
+            return None
         print(f"[INE] Recibidos {len(data)} registros")
         return data
     except Exception as e:
-        print(f"[INE] Error en API: {e}")
+        print(f"[INE] Error en API: {e}; usando fallback estático.")
         return None
 
 def parse_poblacion_ine(raw):

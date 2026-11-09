@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
+import os
 import bcrypt
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 from src.database import get_connection
 
-SECRET_KEY = "enruta-secret-change-in-production"
+SECRET_KEY = os.getenv("ENRUTA_SECRET_KEY", "enruta-secret-change-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 30
+ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ENRUTA_ACCESS_TOKEN_EXPIRE_DAYS", "30"))
 
 
 class Token(BaseModel):

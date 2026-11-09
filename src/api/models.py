@@ -112,6 +112,65 @@ class MatchAccept(BaseModel):
     match_id: int
 
 
+# --- Evaluación stateless (acoplamiento Poolar L1) ---
+class OfertaEval(BaseModel):
+    id: int
+    origen_localidad: str = ""
+    origen_lat: float
+    origen_lon: float
+    destino_localidad: str = ""
+    destino_lat: float
+    destino_lon: float
+    capacidad_disponible_kg: float
+    transportista: str = ""
+    capacidad_kg: float = 0
+    fecha: str = ""
+
+
+class DemandaEval(BaseModel):
+    id: int
+    origen_localidad: str = ""
+    origen_lat: float
+    origen_lon: float
+    destino_localidad: str = ""
+    destino_lat: float
+    destino_lon: float
+    kg: float
+    producto: str = ""
+    productor: str = ""
+    urgente: int = 0
+
+
+class MatchEvaluateRequest(BaseModel):
+    ofertas: List[OfertaEval]
+    demandas: List[DemandaEval]
+    max_detour_pct: float = 20
+    max_detour_km: float = 50
+    top_k: int = 500
+
+
+class MatchEvalResult(BaseModel):
+    oferta_id: int
+    demanda_id: int
+    score: float
+    extra_km: float
+    detour_pct: float
+    ruta_original_km: float
+    ahorro_co2_kg: float
+    capacidad_usada_pct: float
+    fuente: str
+    ruta: str = ""
+    producto: str = ""
+    procedencia: str = "estimado (haversine*1.3, motor simulacion-sobre-base-real)"
+
+
+class MatchEvaluateResponse(BaseModel):
+    contract_version: str = "logistics-l1/0.1"
+    matches: List[MatchEvalResult]
+    count: int
+    procedencia: str = "estimado; actores/datos pueden ser simulados segun origen"
+
+
 # --- Reportes climáticos ---
 class ReporteClimaticoCreate(BaseModel):
     lat: float

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS provincias (
 );
 CREATE TABLE IF NOT EXISTS municipios (
     id INTEGER PRIMARY KEY, nombre TEXT NOT NULL,
-    provincia_id INTEGER NOT NULL, codigo_ine TEXT NOT NULL,
+    provincia_id INTEGER NOT NULL, codigo_ine TEXT NOT NULL DEFAULT '',
     lat REAL, lon REAL, poblacion_2024 INTEGER DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS transportistas (
